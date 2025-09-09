@@ -1,0 +1,15 @@
+[package]
+name = "doh"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+chrono = "0.4"
+execution-time = "0.3.1"
+jsonxf = "1.1.1"
+nonblock = "0.2.0"
+realpath-rs = "0.2.0"
+regex = "1.11.2"
+serde_json = "1.0.142"
+which = "8.0.0"
