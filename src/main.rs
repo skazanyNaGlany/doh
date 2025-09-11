@@ -111,6 +111,7 @@ fn print_usages() {
     println!("\t-p, --pretty-print-objects <bool>           pretty print Python like and JSON like objects, experimental (default \"false\")");
     println!("\t-t, --since <duration>                      return logs newer than a relative duration like 5s, 2m, or 3h (default \"1h\")");
     println!("\t-r, --space-after-message <bool>            add a space character after each message (default \"true\")");
+    println!("\t-g, --follow                                wait for new messages");
     println!(
         "\t-q, --quiet                                 do not output any log messages to stdout"
     );
@@ -155,6 +156,7 @@ fn create_multi_streamer(
     arg_stern_defaults: bool,
     arg_since: &String,
     arg_ext_args: &Vec<String>,
+    arg_follow: &bool,
 ) -> Result<MultiCommandStreamer> {
     let mut multi_streamer = MultiCommandStreamer::new_empty();
 
@@ -170,12 +172,15 @@ fn create_multi_streamer(
                 "--output".into(),
                 "json".into(),
                 "--timestamps=short".into(),
-                "--no-follow".into(),
                 "--since".into(),
                 arg_since.to_string(),
                 "--timezone".into(),
                 "UTC".into(),
             ]);
+
+            if !*arg_follow {
+                stern_args.push("--no-follow".into());
+            }
         }
 
         stern_args.append(&mut arg_ext_args.clone());
@@ -278,6 +283,7 @@ fn run_level_0(
     let arg_all_contexts_at_once = args.get_bool_kv_arg("--all-at-once", false).unwrap();
     let arg_ext_args = args.ext_args_as_str_vec();
     let arg_quiet = args.args.contains(&"--quiet".into());
+    let arg_follow = args.args.contains(&"--follow".into());
     let arg_since: String = args.get_kv_arg_string("--since", false, false).unwrap();
 
     my_println(
@@ -292,8 +298,13 @@ fn run_level_0(
     }
 
     if arg_all_contexts_at_once {
-        let mut multi_streamer =
-            create_multi_streamer(contexts, arg_stern_defaults, &arg_since, &arg_ext_args)?;
+        let mut multi_streamer = create_multi_streamer(
+            contexts,
+            arg_stern_defaults,
+            &arg_since,
+            &arg_ext_args,
+            &arg_follow,
+        )?;
 
         gather_logs_from_multi_streamer(
             &args,
@@ -316,6 +327,7 @@ fn run_level_0(
                 arg_stern_defaults,
                 &arg_since,
                 &arg_ext_args,
+                &arg_follow,
             )?;
 
             gather_logs_from_multi_streamer(
@@ -928,7 +940,9 @@ fn parse_args() -> Result<ArgParser> {
             "--space-after-message",
             "-r",
         ],
-        &vec!["--help", "-h", "--save", "-f", "--quiet", "-q"],
+        &vec![
+            "--help", "-h", "--save", "-f", "--quiet", "-q", "--follow", "-g",
+        ],
         &vec![],
         &vec![],
         &vec![
@@ -946,6 +960,7 @@ fn parse_args() -> Result<ArgParser> {
             &["--pretty-print-objects", "-p"],
             &["--since", "-t"],
             &["--space-after-message", "-r"],
+            &["--follow", "-g"],
         ],
         &vec![],
         BTreeMap::from([
