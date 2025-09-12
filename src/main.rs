@@ -104,7 +104,7 @@ fn print_usages() {
     println!("\t-a, --all-at-once <bool>                    gather logs from all contexts at once (default \"false\"); use with caution since it could be heavy to your network infrastructure");
     println!("\t-s, --skip-invalid-messages <bool>          skip invalid messages (default \"false\"); skip non-json messages returned by Stern");
     println!("\t-b, --blank-line-after-entry <bool>         blank line after each log entry (default \"false\")");
-    println!("\t-i, --include-container <string>[,...]      include logs from only such container(s); comma separated string");
+    println!("\t-i, --include-container <string>[,...]      include logs from only such container(s); use \"all\" for all containers (default \"all\")");
     println!("\t-f, --save <filename>                       save logs to file, leave empty to auto generate file name");
     println!("\t-w, --work-dir                              set working directory");
     println!("\t-m, --fix-up-messages <bool>                remove some redundant data from each log entry, like timestamps etc. (default \"true\")");
@@ -1001,6 +1001,14 @@ fn parse_args() -> Result<ArgParser> {
     return Ok(parsed);
 }
 
+fn clean_args(args: &mut ArgParser) {
+    if let Some(include_container) = args.kv_args.get("--include-container") {
+        if include_container == "all" {
+            args.kv_args.remove("--include-container");
+        }
+    }
+}
+
 fn should_print_usages(args: &ArgParser) -> bool {
     return args.args.contains(&"--help".to_string()) || args.ext_args.is_empty();
 }
@@ -1020,7 +1028,9 @@ fn _set_current_dir(arg_work_dir: &Option<String>) -> Result<Option<String>> {
 fn main() -> Result<()> {
     check_required_binaries()?;
 
-    let args = parse_args()?;
+    let mut args = parse_args()?;
+
+    clean_args(&mut args);
 
     if should_print_usages(&args) {
         print_app_name(&mut None)?;
